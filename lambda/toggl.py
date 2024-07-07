@@ -21,8 +21,8 @@ class TogglDriver:
 
     @staticmethod
     def get_workspace_id(api_token):
-        # get workspace id from api/v8/workspaces
-        r = requests.get('https://www.toggl.com/api/v8/workspaces',
+        # get workspace id from api/v9/workspaces
+        r = requests.get('https://api.track.toggl.com/api/v9/workspaces',
                          auth=(api_token, 'api_token'))
         if r.status_code != 200:
             print("Error: cannot get workspace id. please check the token.")
@@ -37,7 +37,7 @@ class TogglDriver:
     def get_projects(api_token, work_space_id):
         # return projects dictionary
         p_dictionary = {}
-        r = requests.get('https://www.toggl.com/api/v8/workspaces/{0}/projects'.format(work_space_id),
+        r = requests.get('https://api.track.toggl.com/api/v9/workspaces/{0}/projects'.format(work_space_id),
                          auth=(api_token, 'api_token'))
         if r.status_code != 200:
             print("Error: cannot get projects. please check the token.")
@@ -50,7 +50,7 @@ class TogglDriver:
 
     def get_running_time_entry(self):
         # return time entry id of current entry
-        r = requests.get('https://www.toggl.com/api/v8/time_entries/current',
+        r = requests.get('https://api.track.toggl.com/api/v9/time_entries/current',
                          auth=HTTPBasicAuth(self._token, 'api_token'))
         if r.status_code != 200:
             print("Error: cannot get running time entry. please check the token.")
@@ -68,14 +68,23 @@ class TogglDriver:
             self.create_project(project)
             pid = self.projects_dictionary[project]
 
-        params = {"time_entry": {"description": description, "pid": pid, "created_with": "python"}}
-        r = requests.post('https://www.toggl.com/api/v8/time_entries/start',
+        params = {
+            "description": description, 
+            "pid": pid, 
+            "wid": self._workspace_id, 
+            "created_with": "alexa", 
+            "start": f"{datetime.datetime.now().isoformat()}Z", 
+            "duration": -1
+        }
+
+        r = requests.post(f'https://api.track.toggl.com/api/v9/workspaces/{self._workspace_id}/time_entries',
                           auth=HTTPBasicAuth(self._token, 'api_token'),
                           headers=self._headers,
                           data=json.dumps(params))
         print('time entry start. HTTP status :', r.status_code)
 
     def create_project(self, project_name):
+        # TODO 個人的には使ってないのでv9未対応
         # '{"project":{"name":"An awesome project","wid":777,"template_id":10237,"is_private":true,"cid":123397}}'
         params = {"project":{"name": project_name, "wid": self._workspace_id, "is_private": True}}
         r = requests.post('https://www.toggl.com/api/v8/projects',
@@ -85,7 +94,8 @@ class TogglDriver:
         print('create project. HTTP status :', r.status_code)
         self.projects_dictionary = self.get_projects(self._token, self._workspace_id)
 
-    def stop(self, running_time_entry_id):
+    def stop(self, running_time_entry_id): 
+        # TODO 個人的には使ってないのでv9未対応
         url = 'https://www.toggl.com/api/v8/time_entries/' + str(running_time_entry_id) + '/stop'
         r = requests.put(url, auth=HTTPBasicAuth(self._token, 'api_token'), headers=self._headers)
 
@@ -93,6 +103,7 @@ class TogglDriver:
         return r
 
     def get_reports(self, mail_address, project_list, date):
+        # TODO 個人的には使ってないのでv9未対応
         # return each project total time
         # ['Life', 'University', 'Moving', 'Hobby', 'Play', 'Communication']
         params = {
